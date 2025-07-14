@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   HomeIcon, 
-  TableCellsIcon, 
+  ChartBarIcon, 
   CreditCardIcon,
   UserGroupIcon,
-  ChartBarIcon,
+  PresentationChartLineIcon,
   CogIcon,
   BellIcon,
   DocumentTextIcon,
@@ -25,7 +25,7 @@ const navigationItems = [
   { id: 'contacts', label: 'Contacts', icon: UserGroupIcon, href: '/contacts' },
   { id: 'tasks', label: 'Tasks', icon: ClipboardDocumentListIcon, href: '/tasks' },
   { id: 'activities', label: 'Activities', icon: DocumentTextIcon, href: '/activities' },
-  { id: 'reports', label: 'Reports', icon: TableCellsIcon, href: '/reports' },
+  { id: 'reports', label: 'Reports', icon: PresentationChartLineIcon, href: '/reports' },
   { id: 'billing', label: 'Billing', icon: CreditCardIcon, href: '/billing' },
   { id: 'notifications', label: 'Notifications', icon: BellIcon, href: '/notifications' },
   { id: 'settings', label: 'Settings', icon: CogIcon, href: '/settings' },
@@ -87,11 +87,11 @@ export default function Sidebar({ activeItem, onItemClick }: SidebarProps) {
       <div className="p-4 border-t border-slate-700/50">
         <div className="flex items-center space-x-3 p-3 rounded-lg bg-slate-800/50">
           <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-            <span className="text-white font-semibold text-sm">JD</span>
+            <span className="text-white font-semibold text-sm">U</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">John Doe</p>
-            <p className="text-xs text-slate-400 truncate">Sales Manager</p>
+            <p className="text-sm font-medium text-white truncate">User</p>
+            <p className="text-xs text-slate-400 truncate">CRM Manager</p>
           </div>
           <button className="text-slate-400 hover:text-white transition-colors">
             <CogIcon className="w-4 h-4" />

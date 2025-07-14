@@ -7,7 +7,7 @@ import {
   UserPlusIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline';
-import { getDashboardStats } from '@/lib/mockData';
+import { useContacts, useTasks, useActivities } from '@/lib/dataService';
 
 interface StatCardProps {
   title: string;
@@ -47,39 +47,54 @@ function StatCard({ title, value, change, changeType, icon: Icon, iconBg }: Stat
 }
 
 export default function StatsCards() {
-  const dashboardStats = getDashboardStats();
+  const { data: contacts, isLoading: contactsLoading } = useContacts();
+  const { data: tasks, isLoading: tasksLoading } = useTasks();
+  const { data: activities, isLoading: activitiesLoading } = useActivities();
+
+  // Calculate real stats from data
+  const isLoading = contactsLoading || tasksLoading || activitiesLoading;
   
+  const totalContacts = contacts?.length || 0;
+  const activeTasks = tasks?.filter(task => task.status !== 'completed').length || 0;
+  const recentActivities = activities?.filter(activity => {
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return new Date(activity.created_at) >= weekAgo;
+  }).length || 0;
+  const completedTasks = tasks?.filter(task => task.status === 'completed').length || 0;
+  const completionRate = tasks?.length ? Math.round((completedTasks / tasks.length) * 100) : 0;
+
   const stats = [
     {
-      title: 'Total Revenue',
-      value: `$${dashboardStats.totalRevenue.toLocaleString()}`,
-      change: '12.5%',
-      changeType: 'positive' as const,
-      icon: CurrencyDollarIcon,
-      iconBg: 'bg-gradient-to-r from-green-500 to-emerald-600'
-    },
-    {
-      title: 'Active Deals',
-      value: dashboardStats.activeDeals.toString(),
-      change: '8.2%',
-      changeType: 'positive' as const,
-      icon: BriefcaseIcon,
-      iconBg: 'bg-gradient-to-r from-blue-500 to-cyan-600'
-    },
-    {
-      title: 'New Contacts',
-      value: `+${dashboardStats.newContacts}`,
-      change: '15.3%',
-      changeType: 'positive' as const,
+      title: 'Total Contacts',
+      value: isLoading ? '...' : totalContacts.toString(),
+      change: 'All contacts',
+      changeType: 'neutral' as const,
       icon: UserPlusIcon,
       iconBg: 'bg-gradient-to-r from-purple-500 to-pink-600'
     },
     {
-      title: 'Conversion Rate',
-      value: `${dashboardStats.conversionRate}%`,
-      change: '2.1%',
-      changeType: 'positive' as const,
+      title: 'Active Tasks',
+      value: isLoading ? '...' : activeTasks.toString(),
+      change: 'In progress',
+      changeType: 'neutral' as const,
+      icon: BriefcaseIcon,
+      iconBg: 'bg-gradient-to-r from-blue-500 to-cyan-600'
+    },
+    {
+      title: 'Weekly Activities',
+      value: isLoading ? '...' : recentActivities.toString(),
+      change: 'Last 7 days',
+      changeType: 'neutral' as const,
       icon: ChartBarIcon,
+      iconBg: 'bg-gradient-to-r from-green-500 to-emerald-600'
+    },
+    {
+      title: 'Completion Rate',
+      value: isLoading ? '...' : `${completionRate}%`,
+      change: 'Task completion',
+      changeType: 'neutral' as const,
+      icon: CurrencyDollarIcon,
       iconBg: 'bg-gradient-to-r from-orange-500 to-red-600'
     }
   ];

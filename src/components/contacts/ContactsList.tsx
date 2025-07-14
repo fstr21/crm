@@ -64,12 +64,17 @@ export default function ContactsList({ contacts, isLoading, onEditContact }: Con
 
   if (contacts.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-8 text-center">
-        <div className="text-gray-400 mb-4">
-          <BuildingOfficeIcon className="w-12 h-12 mx-auto" />
+      <div className="bg-white rounded-lg shadow p-12 text-center">
+        <div className="text-gray-300 mb-6">
+          <BuildingOfficeIcon className="w-16 h-16 mx-auto" />
         </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No contacts yet</h3>
-        <p className="text-gray-600">Get started by adding your first contact.</p>
+        <h3 className="text-xl font-semibold text-gray-900 mb-3">No contacts yet</h3>
+        <p className="text-gray-600 mb-6 max-w-md mx-auto">
+          Start building your customer relationships. Add your first contact to get started with managing your CRM.
+        </p>
+        <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+          Add Your First Contact
+        </button>
       </div>
     );
   }

@@ -101,12 +101,17 @@ export default function TasksList({ tasks, isLoading, onEditTask }: TasksListPro
 
   if (tasks.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-8 text-center">
-        <div className="text-gray-400 mb-4">
-          <CheckIcon className="w-12 h-12 mx-auto" />
+      <div className="bg-white rounded-lg shadow p-12 text-center">
+        <div className="text-gray-300 mb-6">
+          <CheckIcon className="w-16 h-16 mx-auto" />
         </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks yet</h3>
-        <p className="text-gray-600">Create your first task to get started.</p>
+        <h3 className="text-xl font-semibold text-gray-900 mb-3">No tasks yet</h3>
+        <p className="text-gray-600 mb-6 max-w-md mx-auto">
+          Stay organized and productive. Create your first task to start tracking your work and deadlines.
+        </p>
+        <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+          Create Your First Task
+        </button>
       </div>
     );
   }
