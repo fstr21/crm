@@ -45,6 +45,38 @@ services:
       - .docker/volumes/redis:/data
     command: redis-server --appendonly yes
 
+  mcp-orchestra:
+    build:
+      context: .docker/mcp-orchestra
+      dockerfile: Dockerfile
+    container_name: crm-mcp-orchestra
+    ports:
+      - "3010:3010"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .docker/mcp-orchestra/.env
+    depends_on:
+      - app
+      - postgres
+
+  zen-mcp:
+    build:
+      context: .docker/zen-mcp
+      dockerfile: Dockerfile
+    container_name: crm-zen-mcp
+    ports:
+      - "3020:3020"
+    env_file:
+      - .docker/zen-mcp/.env
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - app
+    command: ["python", "/app/server.py"]
+    tty: true
+    stdin_open: true
+
 networks:
   default:
     name: crm-network
