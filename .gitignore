@@ -1,0 +1,11 @@
+node_modules/
+.next/
+.env
+.env.local
+.docker/volumes/
+*.log
+.DS_Store
+Thumbs.db
+coverage/
+tmp/
+temp/
