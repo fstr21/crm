@@ -1,242 +1,142 @@
 # Supabase MCP Server
 
-A comprehensive Model Context Protocol (MCP) server for Supabase integration with your CRM project.
+A comprehensive Model Context Protocol (MCP) server for Supabase integration with the CRM project.
 
 ## 🚀 Quick Start
 
-### 1. Configure Environment Variables
+### Prerequisites
+- Docker and Docker Compose installed
+- Supabase project created at https://supabase.com/dashboard
+- Service role key from Supabase project settings
 
-Update `.env` with your Supabase project details:
+### Setup Instructions
 
-```bash
-SUPABASE_TOKEN=sbp_4c23fccbb9419a00fb4886e6b535f6829f31c904  # ✅ Already configured
-SUPABASE_URL=https://your-project-id.supabase.co                # ⚠️ NEEDS UPDATE
-LOG_LEVEL=info
-MCP_SERVER_PORT=3030
-NODE_ENV=development
+1. **Configure environment variables**:
+   ```bash
+   # Update .env file with your Supabase credentials
+   SUPABASE_URL=https://your-project-id.supabase.co
+   SUPABASE_TOKEN=your-service-role-key
+   ```
+
+2. **Start the MCP server**:
+   ```bash
+   docker-compose up -d supabase-mcp
+   ```
+
+3. **Create database tables** (in Supabase Dashboard → SQL Editor):
+   ```sql
+   -- Create test table
+   CREATE TABLE IF NOT EXISTS mcp_test (
+     id SERIAL PRIMARY KEY,
+     name TEXT NOT NULL,
+     email TEXT,
+     created_at TIMESTAMPTZ DEFAULT NOW()
+   );
+
+   -- Create contacts table
+   CREATE TABLE IF NOT EXISTS contacts (
+     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+     email TEXT UNIQUE NOT NULL,
+     first_name TEXT NOT NULL,
+     last_name TEXT,
+     company TEXT,
+     phone TEXT,
+     created_at TIMESTAMPTZ DEFAULT NOW(),
+     updated_at TIMESTAMPTZ DEFAULT NOW()
+   );
+
+   -- Insert sample data
+   INSERT INTO mcp_test (name, email) VALUES 
+   ('Test User 1', 'test1@example.com'),
+   ('Test User 2', 'test2@example.com');
+   ```
+
+4. **Test the setup**:
+   ```bash
+   docker-compose exec supabase-mcp node test-with-tables.js
+   ```
+
+## 🔧 Available Tools
+
+The MCP server provides these tools:
+
+- **`test_connection`** - Test Supabase connection and show basic info
+- **`query_table`** - Query any table in the database
+- **`list_tables`** - List all tables in the public schema
+- **`create_test_table`** - Create a test table to verify write access
+- **`insert_test_data`** - Insert test data into a table
+
+## 📊 Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│           CRM Application                   │
+│                    │                        │
+│                    ▼                        │
+│         Supabase MCP Server                 │
+│  ┌─────────────────────────────────────┐   │
+│  │  JSON-RPC Protocol                  │   │
+│  │  ├─ Connection Management           │   │
+│  │  ├─ Database Operations             │   │
+│  │  ├─ Error Handling                  │   │
+│  │  └─ Logging                         │   │
+│  └─────────────────────────────────────┘   │
+│                    │                        │
+│                    ▼                        │
+│           Supabase Database                 │
+│           (PostgreSQL)                      │
+└─────────────────────────────────────────────┘
 ```
 
-**To get your Supabase URL:**
-1. Go to [Supabase Dashboard](https://supabase.com/dashboard)
-2. Create a new project or select existing one
-3. Go to Settings → API
-4. Copy the "Project URL" 
+## 🧪 Testing
 
-### 2. Build and Run
-
+### Basic Protocol Test
 ```bash
-# Build the container
-docker-compose build supabase-mcp
-
-# Run the container
-docker-compose up -d supabase-mcp
-
-# Check status
-docker-compose ps supabase-mcp
+docker-compose exec supabase-mcp node test-mcp.js
 ```
 
-### 3. Run Tests
-
+### Database Operations Test
 ```bash
-# Run comprehensive test suite
-docker-compose exec supabase-mcp npm test
-
-# Check health
-docker-compose exec supabase-mcp npm run health
-
-# View logs
-docker-compose logs supabase-mcp
+docker-compose exec supabase-mcp node test-with-tables.js
 ```
 
-## 🛠️ Available Tools
-
-### Database Operations
-- `supabase_query` - Execute SELECT queries
-- `supabase_insert` - Insert new records
-- `supabase_update` - Update existing records  
-- `supabase_delete` - Delete records
-
-### CRM-Specific Operations
-- `crm_create_contact` - Create new contacts
-- `crm_create_task` - Create new tasks
-- `crm_get_dashboard_data` - Get analytics data
-
-### Authentication & User Management
-- `supabase_auth_status` - Check auth status
-- `supabase_auth_signup` - Sign up new users
-
-### File Storage
-- `supabase_storage_upload` - Upload files
-- `supabase_storage_list` - List bucket files
-
-### Real-time Features
-- `supabase_realtime_subscribe` - Subscribe to table changes
-
-### Schema Management
-- `supabase_create_crm_schema` - Create CRM database schema
-- `supabase_get_schema_info` - Get schema information
-
-## 🧪 Testing Strategy
-
-### Basic Connectivity Test
-```bash
-docker-compose exec supabase-mcp npm test
-```
-
-### Test Individual Components
-```bash
-# Test database access
-docker-compose exec supabase-mcp node -e "
-import('./test.js').then(m => m.testDatabaseAccess())
-"
-
-# Test authentication
-docker-compose exec supabase-mcp node -e "
-import('./test.js').then(m => m.testAuth())
-"
-```
-
-### CRM Integration Tests
-```bash
-# Create test user
-docker-compose exec supabase-mcp node -e "
-import { createClient } from '@supabase/supabase-js';
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_TOKEN);
-// Test operations here
-"
-```
-
-## 🔧 Configuration Options
-
-### Environment Variables
-
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `SUPABASE_URL` | Your Supabase project URL | Yes | - |
-| `SUPABASE_TOKEN` | Service role key | Yes | - |
-| `LOG_LEVEL` | Logging level | No | info |
-| `MCP_SERVER_PORT` | Server port | No | 3030 |
-| `NODE_ENV` | Environment | No | development |
-
-### Supabase Project Setup
-
-For full functionality, your Supabase project should have:
-
-1. **Database Access** - Service role key with full permissions
-2. **Storage** - Enabled with at least one bucket  
-3. **Auth** - Enabled for user management
-4. **Real-time** - Enabled for live updates
-
-## 🚨 Troubleshooting
+## 🔍 Troubleshooting
 
 ### Common Issues
 
-#### 1. Connection Failed
-```bash
-# Check environment variables
-docker-compose exec supabase-mcp env | grep SUPABASE
+1. **Connection Errors**
+   - Check SUPABASE_URL is correct
+   - Verify service role key is valid
+   - Ensure database exists
 
-# Verify URL format
-echo $SUPABASE_URL  # Should be https://xxx.supabase.co
-```
+2. **Table Not Found**
+   - Run the schema creation SQL in Supabase Dashboard
+   - Check table names match exactly
 
-#### 2. Permission Denied
-- Ensure you're using the **service role key**, not anon key
-- Check key permissions in Supabase dashboard
-
-#### 3. Schema Creation Failed
-- Use Supabase SQL Editor for initial schema setup
-- Service role may have limited DDL permissions
-
-#### 4. Storage Access Limited
-- Enable Storage in Supabase dashboard
-- Create at least one storage bucket
+3. **Permission Errors**
+   - Ensure using service role key (not anon key)
+   - Check RLS policies if enabled
 
 ### Debug Commands
 
 ```bash
-# View detailed logs
-docker-compose logs -f supabase-mcp
+# Check container logs
+docker-compose logs supabase-mcp
 
-# Check container health
-docker-compose exec supabase-mcp npm run health
-
-# Interactive debugging
-docker-compose exec supabase-mcp sh
+# Check environment variables
+docker-compose exec supabase-mcp env | grep SUPABASE
 ```
 
-## 📊 Performance Monitoring
+## 📋 Next Steps
 
-### Health Checks
-The container includes automatic health checks:
-- Runs every 30 seconds
-- 3 retry attempts
-- 10 second timeout
+1. **CRM Integration**: Connect this MCP server to your CRM application
+2. **Schema Enhancement**: Add more CRM-specific tables (tasks, activities, etc.)
+3. **Advanced Features**: Add real-time subscriptions, file uploads, auth
+4. **Monitoring**: Set up health checks and logging
+5. **Testing**: Add comprehensive test suite for all operations
 
-### Logging
-All operations are logged to:
-- Console (Docker logs)
-- File: `/app/logs/supabase-mcp.log`
+## 🔗 Links
 
-### Metrics
-Track usage via logs:
-```bash
-# Tool usage stats
-docker-compose logs supabase-mcp | grep "Executing tool"
-
-# Error rates  
-docker-compose logs supabase-mcp | grep "ERROR"
-```
-
-## 🔗 Integration with Existing MCP Servers
-
-This Supabase MCP server integrates with your existing setup:
-
-- **Port 3030** - Supabase MCP Server
-- **Port 3020** - Zen MCP (AI Integration)  
-- **Port 3010** - MCP Orchestra
-- **Logs** - Shared `/logs` volume
-
-## 📚 Usage Examples
-
-### Create CRM Contact
-```javascript
-// Tool: crm_create_contact
-{
-  "email": "john@example.com",
-  "firstName": "John", 
-  "lastName": "Doe",
-  "company": "Acme Corp",
-  "userId": "user-123"
-}
-```
-
-### Query Database
-```javascript
-// Tool: supabase_query
-{
-  "table": "contacts",
-  "select": "id, firstName, lastName, email",
-  "filter": { "status": "ACTIVE" },
-  "limit": 10
-}
-```
-
-### Get Dashboard Analytics
-```javascript
-// Tool: crm_get_dashboard_data
-{
-  "userId": "user-123",
-  "timeframe": "month"
-}
-```
-
-## 🎯 Next Steps
-
-1. **Configure SUPABASE_URL** in `.env`
-2. **Run initial tests** with `npm test`
-3. **Create CRM schema** using `supabase_create_crm_schema`
-4. **Start testing CRM operations**
-5. **Integrate with your application**
-
-For advanced configuration and custom tools, see the source code in `index.js`.
+- [Supabase Documentation](https://supabase.com/docs)
+- [MCP Protocol Specification](https://modelcontextprotocol.io/docs)
+- [CRM Project Repository](https://github.com/fstr21/crm)
