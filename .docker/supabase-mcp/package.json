@@ -7,20 +7,28 @@
   "scripts": {
     "start": "node simple-server.js",
     "start-complex": "node index.js",
+    "http": "node http-server.js",
     "test": "node test.js",
     "health": "node health-check.js",
     "dev": "nodemon simple-server.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.38.0",
     "@modelcontextprotocol/sdk": "^0.4.0",
+    "@supabase/supabase-js": "^2.38.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.3.1",
+    "express": "^4.21.2",
     "winston": "^3.11.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
   },
-  "keywords": ["mcp", "supabase", "crm", "database"],
+  "keywords": [
+    "mcp",
+    "supabase",
+    "crm",
+    "database"
+  ],
   "author": "CRM Development Team",
   "license": "MIT"
 }

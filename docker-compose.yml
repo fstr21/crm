@@ -124,15 +124,14 @@ services:
       - ./logs:/app/logs
     depends_on:
       - app
+    command: npm run http
     healthcheck:
-      test: ["CMD", "node", "health-check.js"]
+      test: ["CMD", "curl", "-f", "http://localhost:3030/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
     restart: unless-stopped
-    stdin_open: true
-    tty: true
 
 networks:
   default:
