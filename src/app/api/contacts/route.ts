@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { email, firstName, lastName, company, phone, userId } = body
 
-    if (\!email || \!firstName || \!userId) {
+    if (!email || !firstName || !userId) {
       return NextResponse.json(
         {
           success: false,

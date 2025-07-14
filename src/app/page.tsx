@@ -1,27 +1,41 @@
+'use client'
+
+import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import StatsCards from '@/components/dashboard/StatsCards';
+import DashboardWidgets from '@/components/dashboard/DashboardWidgets';
+import { useHealthCheck } from '@/lib/dataService';
+
 export default function Home() {
+  const { data: healthData, isLoading: healthLoading, error: healthError } = useHealthCheck();
+
   return (
-    <main className="min-h-screen p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-6">
-          <p className="font-bold">🐳 Running in Docker Container\!</p>
-          <p className="text-sm">This page is served from a Linux container, not Windows</p>
-        </div>
-        <h1 className="text-4xl font-bold mb-8">CRM Dashboard</h1>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">Contacts</h2>
-            <p className="text-gray-600">Manage your customer contacts</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">Tasks</h2>
-            <p className="text-gray-600">Track your tasks and activities</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">Reports</h2>
-            <p className="text-gray-600">View analytics and reports</p>
-          </div>
-        </div>
+    <DashboardLayout title="Dashboard">
+      {/* MCP Server Status Banner */}
+      <div className={`border px-4 py-3 rounded-lg mb-6 ${
+        healthError 
+          ? 'bg-red-100 border-red-400 text-red-700'
+          : healthLoading
+          ? 'bg-yellow-100 border-yellow-400 text-yellow-700'
+          : 'bg-green-100 border-green-400 text-green-700'
+      }`}>
+        <p className="font-bold">
+          {healthError ? '❌ MCP Server Disconnected' : healthLoading ? '🔄 Checking MCP Server...' : '✅ MCP Server Connected'}
+        </p>
+        <p className="text-sm">
+          {healthError 
+            ? 'Unable to connect to the Supabase MCP server. Please ensure it\'s running on port 3030.'
+            : healthLoading
+            ? 'Verifying connection to the backend services...'
+            : `Connected to Supabase MCP server. Last check: ${healthData?.timestamp ? new Date(healthData.timestamp).toLocaleTimeString() : 'now'}`
+          }
+        </p>
       </div>
-    </main>
+
+      {/* Stats Cards */}
+      <StatsCards />
+      
+      {/* Dashboard Widgets */}
+      <DashboardWidgets />
+    </DashboardLayout>
   )
 }
