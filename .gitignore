@@ -4,6 +4,7 @@ node_modules/
 .env.local
 .docker/volumes/
 .docker/zen-mcp/.env
+.docker/context7-mcp/.env
 *.log
 .DS_Store
 Thumbs.db

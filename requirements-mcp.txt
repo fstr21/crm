@@ -1,0 +1,3 @@
+# MCP Server Dependencies
+mcp>=0.4.0
+asyncio-stdio>=0.1.0

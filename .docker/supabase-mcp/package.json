@@ -1,0 +1,26 @@
+{
+  "name": "supabase-mcp-server",
+  "version": "1.0.0",
+  "description": "Supabase MCP Server for CRM Project",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node simple-server.js",
+    "start-complex": "node index.js",
+    "test": "node test.js",
+    "health": "node health-check.js",
+    "dev": "nodemon simple-server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.0",
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "dotenv": "^16.3.1",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": ["mcp", "supabase", "crm", "database"],
+  "author": "CRM Development Team",
+  "license": "MIT"
+}

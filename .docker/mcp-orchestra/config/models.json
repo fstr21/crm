@@ -1,0 +1,29 @@
+{
+  "routing": {
+    "research": {
+      "primary": "gemini-pro",
+      "fallback": "claude-3-sonnet",
+      "cost_savings": "75%"
+    },
+    "code_generation": {
+      "primary": "gemini-flash",
+      "fallback": "claude-3-sonnet", 
+      "cost_savings": "85%"
+    },
+    "testing": {
+      "primary": "gpt-3.5-turbo",
+      "fallback": "claude-3-sonnet",
+      "cost_savings": "70%"
+    },
+    "critical_decisions": {
+      "primary": "claude-3-sonnet",
+      "fallback": "claude-3-sonnet",
+      "cost_savings": "0%"
+    }
+  },
+  "confidence_thresholds": {
+    "auto_proceed": 0.95,
+    "human_review": 0.85,
+    "retry_with_claude": 0.70
+  }
+}

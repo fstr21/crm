@@ -54,6 +54,7 @@ services:
       - "3010:3010"
     environment:
       - NODE_ENV=production
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
     env_file:
       - .docker/mcp-orchestra/.env
     depends_on:
@@ -76,6 +77,62 @@ services:
     command: ["python", "/app/server.py"]
     tty: true
     stdin_open: true
+
+  context7:
+    build:
+      context: .docker/context7
+      dockerfile: Dockerfile
+    container_name: crm-context7
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - app
+    stdin_open: true
+    tty: true
+    command: ["tail", "-f", "/dev/null"]
+
+  puppeteer-mcp:
+    build:
+      context: .docker/puppeteer-mcp
+      dockerfile: Dockerfile
+    container_name: crm-puppeteer-mcp
+    environment:
+      - DOCKER_CONTAINER=true
+      - NODE_ENV=production
+    volumes:
+      - ./screenshots:/app/screenshots
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_ADMIN
+    depends_on:
+      - app
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  supabase-mcp:
+    build:
+      context: .docker/supabase-mcp
+      dockerfile: Dockerfile
+    container_name: crm-supabase-mcp
+    ports:
+      - "3030:3030"
+    env_file:
+      - .docker/supabase-mcp/.env
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - app
+    healthcheck:
+      test: ["CMD", "node", "health-check.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
 
 networks:
   default:
