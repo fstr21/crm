@@ -3,6 +3,7 @@
 import React from 'react';
 import { Activity } from '@/lib/mcpClient';
 import { useCreateActivity, useUpdateActivity, useContacts, useTasks } from '@/lib/dataService';
+import { useAuth } from '@/contexts/AuthContext';
 import { useForm } from 'react-hook-form';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
@@ -21,6 +22,7 @@ type ActivityFormData = {
 };
 
 export default function ActivityForm({ activity, onClose }: ActivityFormProps) {
+  const { user } = useAuth();
   const createActivityMutation = useCreateActivity();
   const updateActivityMutation = useUpdateActivity();
   const { data: contacts } = useContacts();
@@ -40,7 +42,7 @@ export default function ActivityForm({ activity, onClose }: ActivityFormProps) {
       user_id: activity.user_id,
     } : {
       type: 'note',
-      user_id: 'current-user', // In a real app, this would come from auth context
+      user_id: user?.id || '',
     },
   });
 

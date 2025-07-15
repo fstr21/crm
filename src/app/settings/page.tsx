@@ -50,7 +50,7 @@ export default function SettingsPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
             <input
               type="text"
-              defaultValue="John"
+placeholder="Enter first name"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -58,7 +58,7 @@ export default function SettingsPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
             <input
               type="text"
-              defaultValue="Doe"
+placeholder="Enter last name"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -66,7 +66,7 @@ export default function SettingsPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
             <input
               type="email"
-              defaultValue="john.doe@company.com"
+placeholder="Enter email address"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -74,7 +74,7 @@ export default function SettingsPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
             <input
               type="tel"
-              defaultValue="+1 (555) 123-4567"
+placeholder="Enter phone number"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -94,7 +94,7 @@ export default function SettingsPage() {
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Picture</h3>
         <div className="flex items-center space-x-4">
           <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-            <span className="text-white font-semibold text-lg">JD</span>
+            <span className="text-white font-semibold text-lg">U</span>
           </div>
           <div>
             <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
