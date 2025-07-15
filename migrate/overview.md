@@ -98,8 +98,8 @@ Users can manually enable ANY module in Settings → Modules, regardless of thei
 
 #### Core Infrastructure
 - [x] Next.js + Supabase setup
-- [x] Docker development environment
-- [x] Prisma migrations system
+- [x] Local development environment
+- [x] Supabase database migrations
 - [ ] Module registry system
 - [ ] Feature flag infrastructure
 - [ ] User preferences storage
@@ -242,9 +242,17 @@ Features:
 
 ## 🏗️ Technical Architecture
 
-### Module System Implementation
+### Supabase-First Architecture
 
 ```typescript
+// src/lib/supabase/client.ts
+import { createClient } from '@supabase/supabase-js'
+
+export const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
 // src/lib/modules/registry.ts
 export interface ModuleConfig {
   id: string;
@@ -269,53 +277,54 @@ export class ModuleLoader {
     this.registerPermissions(module.permissions);
   }
   
-  isModuleEnabled(moduleId: string, user: User) {
-    const userPrefs = user.preferences.modules;
-    return userPrefs[moduleId]?.enabled ?? false;
+  async isModuleEnabled(moduleId: string, userId: string) {
+    const { data } = await supabase
+      .from('user_preferences')
+      .select('modules')
+      .eq('user_id', userId)
+      .single();
+      
+    return data?.modules?.[moduleId]?.enabled ?? false;
   }
 }
 ```
 
 ### Database Schema Structure
 
-```prisma
-// Module preferences per user
-model UserPreferences {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id])
-  
-  businessType  BusinessType
-  modules       Json     // { "sales": { "enabled": true, "settings": {} } }
-  theme         String   @default("light")
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
+```sql
+-- Module preferences per user (Supabase)
+CREATE TABLE user_preferences (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID UNIQUE REFERENCES auth.users(id),
+  business_type business_type_enum,
+  modules JSONB DEFAULT '{}', -- { "sales": { "enabled": true, "settings": {} } }
+  theme VARCHAR(50) DEFAULT 'light',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-// Feature flags for gradual rollout
-model FeatureFlag {
-  id            String   @id @default(cuid())
-  name          String   @unique
-  enabled       Boolean  @default(false)
-  rolloutPercentage Int @default(0)
-  targetUsers   String[] // User IDs for targeted rollout
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
+-- Feature flags for gradual rollout (Supabase)
+CREATE TABLE feature_flags (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) UNIQUE NOT NULL,
+  enabled BOOLEAN DEFAULT false,
+  rollout_percentage INTEGER DEFAULT 0,
+  target_users UUID[] DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-enum BusinessType {
-  FREELANCER
-  SMALL_BUSINESS
-  AGENCY
-  SALES_TEAM
-  ECOMMERCE
-  NONPROFIT
-  CONSULTANT
-  ENTERPRISE
-  CUSTOM
-}
+CREATE TYPE business_type_enum AS ENUM (
+  'FREELANCER',
+  'SMALL_BUSINESS',
+  'AGENCY',
+  'SALES_TEAM',
+  'ECOMMERCE',
+  'NONPROFIT',
+  'CONSULTANT',
+  'ENTERPRISE',
+  'CUSTOM'
+);
 ```
 
 ### Component Architecture
@@ -343,10 +352,12 @@ src/
 ├── hooks/
 │   ├── useModule.ts      # Module loading hook
 │   ├── usePermissions.ts # Permission checking
-│   └── usePreferences.ts # User preferences
+│   ├── usePreferences.ts # User preferences
+│   └── useSupabase.ts    # Supabase integration
 └── lib/
     ├── modules/          # Module system
     ├── permissions/      # RBAC system
+    ├── supabase/         # Supabase client & utilities
     └── api/             # API utilities
 ```
 
@@ -354,53 +365,68 @@ src/
 
 ## 🔌 API Design Specification
 
-### RESTful Endpoints
+### Supabase API + Next.js API Routes
 
 ```
-/api/v1/
+# Supabase Auto-Generated APIs
+/rest/v1/
+├── contacts           # Auto CRUD via Supabase
+├── user_preferences   # Auto CRUD via Supabase
+├── feature_flags      # Auto CRUD via Supabase
+└── tasks              # Auto CRUD via Supabase
+
+# Custom Next.js API Routes
+/api/
 ├── auth/
-│   ├── POST   /login
-│   ├── POST   /logout
-│   ├── POST   /refresh
-│   └── GET    /me
-├── contacts/
-│   ├── GET    /         ?page=1&limit=20&search=john
-│   ├── POST   /
-│   ├── GET    /:id
-│   ├── PATCH  /:id
-│   ├── DELETE /:id
-│   └── POST   /import   (CSV upload)
+│   ├── POST   /callback     # Supabase auth callback
+│   ├── POST   /signout      # Custom signout logic
+│   └── GET    /user         # Get current user
 ├── modules/
-│   ├── GET    /         List available modules
-│   ├── GET    /:id      Get module details
-│   └── PATCH  /:id      Enable/disable module
-└── preferences/
-    ├── GET    /
-    └── PATCH  /
+│   ├── GET    /             # List available modules
+│   ├── GET    /:id          # Get module details
+│   └── POST   /toggle       # Enable/disable module
+├── contacts/
+│   └── POST   /import       # CSV import (custom logic)
+└── webhooks/
+    └── POST   /supabase     # Supabase webhooks
 ```
 
 ### API Response Format
 
 ```typescript
-// Success response
+// Supabase success response
 {
-  "success": true,
-  "data": { ... },
-  "meta": {
-    "page": 1,
-    "limit": 20,
-    "total": 156
-  }
+  "data": [...],
+  "error": null,
+  "count": 156,
+  "status": 200,
+  "statusText": "OK"
 }
 
-// Error response
+// Supabase error response
 {
-  "success": false,
+  "data": null,
   "error": {
-    "code": "VALIDATION_ERROR",
+    "code": "PGRST116",
     "message": "Invalid email format",
-    "details": { ... }
-  }
+    "details": "...",
+    "hint": "..."
+  },
+  "count": null,
+  "status": 400,
+  "statusText": "Bad Request"
+}
+
+// Custom API wrapper for consistency
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  meta?: {
+    page?: number;
+    limit?: number;
+    total?: number;
+  };
 }
 ```
 
@@ -408,7 +434,7 @@ src/
 
 ## 🧪 Testing Strategy
 
-### Test Pyramid
+### Test Pyramid with Supabase
 
 ```
          /\
@@ -416,31 +442,52 @@ src/
        /────\   - Critical user journeys
       /      \  - Cross-browser testing
      /────────\ Integration Tests (30%)
-    /          \- API endpoints
+    /          \- Supabase API endpoints
    /────────────\- Module interactions
   /              \ Unit Tests (60%)
  /────────────────\- Components
 /                  \- Utilities
 ```
 
-### Testing Approach
+### Testing Approach with Supabase
 
 ```typescript
-// Module testing example
+// Module testing with Supabase
 describe('Sales Module', () => {
-  it('should be disabled by default for freelancers', () => {
-    const user = createUser({ businessType: 'FREELANCER' });
-    expect(isModuleEnabled('sales', user)).toBe(false);
+  beforeEach(async () => {
+    // Setup test database
+    await supabase.from('users').delete().neq('id', 'keep-me');
+    await supabase.from('user_preferences').delete().neq('id', 'keep-me');
   });
   
-  it('should be enabled by default for sales teams', () => {
-    const user = createUser({ businessType: 'SALES_TEAM' });
-    expect(isModuleEnabled('sales', user)).toBe(true);
+  it('should be disabled by default for freelancers', async () => {
+    const { data: user } = await supabase.auth.signUp({
+      email: 'test@example.com',
+      password: 'testpass'
+    });
+    
+    await supabase.from('user_preferences').insert({
+      user_id: user.user!.id,
+      business_type: 'FREELANCER'
+    });
+    
+    const isEnabled = await isModuleEnabled('sales', user.user!.id);
+    expect(isEnabled).toBe(false);
   });
   
-  it('should load pipeline component when enabled', async () => {
-    await enableModule('sales');
-    expect(screen.getByTestId('sales-pipeline')).toBeInTheDocument();
+  it('should be enabled by default for sales teams', async () => {
+    const { data: user } = await supabase.auth.signUp({
+      email: 'sales@example.com',
+      password: 'testpass'
+    });
+    
+    await supabase.from('user_preferences').insert({
+      user_id: user.user!.id,
+      business_type: 'SALES_TEAM'
+    });
+    
+    const isEnabled = await isModuleEnabled('sales', user.user!.id);
+    expect(isEnabled).toBe(true);
   });
 });
 ```
@@ -449,29 +496,31 @@ describe('Sales Module', () => {
 
 ## 🚀 Deployment Strategy
 
-### Environments
+### Supabase-Powered Environments
 
-| Environment | Purpose | URL | Branch |
-|------------|---------|-----|--------|
-| Development | Local development | localhost:3000 | feature/* |
-| Staging | Testing & QA | staging.novacrm.app | develop |
-| Production | Live application | app.novacrm.app | main |
+| Environment | Purpose | URL | Supabase Project | Branch |
+|------------|---------|-----|------------------|--------|
+| Development | Local development | localhost:3000 | Local Supabase | feature/* |
+| Staging | Testing & QA | staging.novacrm.app | Supabase Staging | develop |
+| Production | Live application | app.novacrm.app | Supabase Production | main |
 
-### Feature Rollout
+### Feature Rollout with Supabase
 
 ```typescript
-// Gradual feature rollout
-const featureFlags = {
-  'new-dashboard': {
-    enabled: true,
-    rollout: 25, // 25% of users
-    targets: ['beta-testers']
-  },
-  'ai-insights': {
-    enabled: false,
-    rollout: 0,
-    targets: []
-  }
+// Gradual feature rollout using Supabase
+const getFeatureFlags = async (userId: string) => {
+  const { data } = await supabase
+    .from('feature_flags')
+    .select('*')
+    .eq('enabled', true);
+    
+  return data?.reduce((acc, flag) => {
+    const isTargeted = flag.target_users.includes(userId);
+    const isInRollout = Math.random() * 100 < flag.rollout_percentage;
+    
+    acc[flag.name] = isTargeted || isInRollout;
+    return acc;
+  }, {});
 };
 ```
 
@@ -501,50 +550,158 @@ const featureFlags = {
 
 ---
 
+## 🛠️ Local Development Setup
+
+### Prerequisites
+- Node.js 18+ installed
+- npm or yarn package manager
+- Supabase CLI installed globally: `npm install -g supabase`
+- Git for version control
+
+### Environment Setup
+
+```bash
+# Clone repository
+git clone https://github.com/yourusername/novacrm.git
+cd novacrm
+
+# Install dependencies
+npm install
+
+# Start local Supabase
+supabase start
+
+# Run database migrations
+supabase db reset
+
+# Start development server
+npm run dev
+```
+
+### Local Supabase Configuration
+
+```typescript
+// .env.local
+NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_local_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_local_service_role_key
+
+// Development URLs
+Supabase Studio: http://localhost:54323
+Database: postgresql://postgres:postgres@localhost:54322/postgres
+REST API: http://localhost:54321/rest/v1/
+Auth: http://localhost:54321/auth/v1/
+```
+
+### MCP Server Setup (Local)
+
+```json
+// .mcp.json
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "node",
+      "args": ["./mcp-servers/supabase-server.js"],
+      "env": {
+        "SUPABASE_URL": "http://localhost:54321",
+        "SUPABASE_SERVICE_ROLE_KEY": "your_local_service_role_key"
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "C:\\Users\\fstr2\\Desktop\\crm"]
+    }
+  }
+}
+```
+
+---
+
 ## 📚 Development Standards
 
-### Code Style
+### Code Style with Supabase
 ```typescript
-// ✅ Good: Clear, typed, documented
+// ✅ Good: Clear, typed, Supabase-integrated
 export async function createContact(
   data: CreateContactDto,
   userId: string
 ): Promise<Contact> {
-  // Validate permissions
-  await checkPermission(userId, 'contacts:create');
+  // Validate permissions with Supabase RLS
+  const { data: contact, error } = await supabase
+    .from('contacts')
+    .insert({ ...data, user_id: userId })
+    .select()
+    .single();
+    
+  if (error) throw new Error(error.message);
   
-  // Create with transaction
-  return db.transaction(async (tx) => {
-    const contact = await tx.contact.create({ data });
-    await createActivity(tx, userId, 'contact.created', contact.id);
-    return contact;
+  // Create activity log
+  await supabase.from('activities').insert({
+    user_id: userId,
+    action: 'contact.created',
+    entity_id: contact.id,
+    entity_type: 'contact'
   });
+  
+  return contact;
 }
 
-// ❌ Bad: No types, no validation, no transaction
+// ❌ Bad: No types, no validation, no activity logging
 export async function createContact(data) {
-  return db.contact.create({ data });
+  return supabase.from('contacts').insert(data);
 }
 ```
 
-### Git Workflow
+### Git Workflow with Supabase
 ```
-main ─────────────────────────► Production
+main ─────────────────────────► Production (Supabase Prod)
   │
-  └── develop ──────────────► Staging
+  └── develop ──────────────► Staging (Supabase Staging)
         │
-        ├── feature/sales-pipeline
-        ├── feature/email-integration
-        └── fix/auth-timeout
+        ├── feature/sales-pipeline (Local Supabase)
+        ├── feature/email-integration (Local Supabase)
+        └── fix/auth-timeout (Local Supabase)
+```
+
+### Database Migration Workflow
+```bash
+# Create new migration
+supabase migration new add_sales_pipeline
+
+# Apply migrations locally
+supabase db reset
+
+# Deploy to staging
+supabase db push --project-ref staging-project-id
+
+# Deploy to production
+supabase db push --project-ref production-project-id
 ```
 
 ### Commit Standards
 ```
 feat(sales): add pipeline drag-and-drop
-fix(auth): resolve token refresh race condition
-docs(api): update contact endpoints
+fix(auth): resolve Supabase token refresh race condition
+docs(api): update Supabase contact endpoints
 refactor(modules): simplify loader logic
 test(billing): add invoice generation tests
+migration(db): add user_preferences table
+```
+
+### Database Version Control
+```bash
+# Create migration
+supabase migration new migration_name
+
+# Apply locally
+supabase db reset
+
+# Commit migration files
+git add supabase/migrations/
+git commit -m "migration(db): add user_preferences table"
+
+# Deploy to staging/production
+supabase db push --project-ref project-id
 ```
 
 ---
@@ -567,12 +724,51 @@ test(billing): add invoice generation tests
 
 ---
 
+## 🚀 Production Deployment with Supabase
+
+### Deployment Pipeline
+```
+Local Development → Staging → Production
+     │              │         │
+ Local Supabase   Supabase    Supabase
+   (localhost)    Staging     Production
+```
+
+### Environment Configuration
+```bash
+# Staging deployment
+supabase link --project-ref staging-project-id
+supabase db push
+vercel deploy --env staging
+
+# Production deployment
+supabase link --project-ref production-project-id
+supabase db push
+vercel deploy --prod
+```
+
+### Supabase Project Setup
+```typescript
+// Production environment variables
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+// Enable required features
+- Row Level Security (RLS)
+- Real-time subscriptions
+- Email authentication
+- Storage for file uploads
+```
+
+---
+
 ## 🤝 Team Collaboration
 
 ### Roles
 - **Frontend**: React, TypeScript, Module UI
-- **Backend**: API, Database, Authentication
-- **DevOps**: Docker, CI/CD, Monitoring
+- **Backend**: Supabase, API Routes, Authentication
+- **DevOps**: Vercel, Supabase, CI/CD, Monitoring
 - **QA**: Testing, Automation, Quality
 - **Product**: Features, UX, Analytics
 

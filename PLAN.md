@@ -5,7 +5,7 @@
 ✅ **Supabase JavaScript Client**: Already installed (`@supabase/supabase-js: ^2.38.0`)
 ✅ **Mock Data Cleanup**: 95% complete, only one hardcoded user ID in ActivityForm.tsx
 ✅ **Database Schema**: Supabase schema exists (`supabase_crm_schema_auth_fixed.sql`)
-✅ **Redis Available**: Port 6379 mentioned in CLAUDE.md for rate limiting
+✅ **Local Redis**: Available for rate limiting (no Docker required)
 
 ⚠️ **Missing**: No Supabase client configuration or auth implementation yet
 
@@ -164,8 +164,8 @@ CREATE TABLE auth_attempts (
 ## Dependencies Required
 
 - Supabase project with Google OAuth enabled
-- Redis instance running on port 6379
-- PostgreSQL database with auth tables
+- Local Redis instance (no Docker required)
+- Supabase PostgreSQL database with auth tables
 - Google Cloud Console OAuth app
 - Environment variables configured
 

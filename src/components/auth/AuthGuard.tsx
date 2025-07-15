@@ -15,6 +15,11 @@ export default function AuthGuard({
   requireAuth = true, 
   redirectTo = '/auth/login' 
 }: AuthGuardProps) {
+  // DISABLED: Auth temporarily disabled to stop email bouncing
+  // Always allow access for now
+  return <>{children}</>
+
+  /* ORIGINAL CODE - DISABLED
   const { user, loading } = useAuth()
   const router = useRouter()
 
@@ -48,4 +53,5 @@ export default function AuthGuard({
   }
 
   return <>{children}</>
+  */
 }

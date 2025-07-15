@@ -1,36 +1,12 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { mockContacts } from "@/lib/mockData"
+import { logContactActivity } from "@/lib/activityLogger"
 
 export async function GET() {
   try {
-    const contacts = await prisma.contact.findMany({
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-        tasks: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    })
-
-    return NextResponse.json({
-      success: true,
-      data: contacts,
-      count: contacts.length,
-    })
+    return NextResponse.json(mockContacts)
   } catch (error) {
-    console.error("Database error:", error)
+    console.error("Error fetching contacts:", error)
     return NextResponse.json(
       {
         success: false,
@@ -45,54 +21,39 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { email, firstName, lastName, company, phone, userId } = body
+    const { name, email, phone, company, status, value } = body
 
-    if (!email || !firstName || !userId) {
+    if (!name || !email) {
       return NextResponse.json(
         {
           success: false,
-          error: "Missing required fields: email, firstName, userId",
+          error: "Missing required fields: name, email",
         },
         { status: 400 }
       )
     }
 
-    const contact = await prisma.contact.create({
-      data: {
-        email,
-        firstName,
-        lastName,
-        company,
-        phone,
-        userId,
-      },
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-      },
-    })
+    const newContact = {
+      id: crypto.randomUUID(),
+      name,
+      email,
+      phone: phone || '',
+      company: company || '',
+      status: status || 'cold',
+      value: value || 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
 
-    // Create activity log
-    await prisma.activity.create({
-      data: {
-        type: "CONTACT_CREATED",
-        title: "Contact created",
-        content: `${firstName} ${lastName || ""} was added to contacts`,
-        userId,
-        contactId: contact.id,
-      },
-    })
+    // In a real app, save to database
+    mockContacts.push(newContact)
 
-    return NextResponse.json({
-      success: true,
-      data: contact,
-    })
+    // Auto-create activity log
+    logContactActivity('created', newContact.name, newContact.id)
+
+    return NextResponse.json(newContact, { status: 201 })
   } catch (error) {
-    console.error("Database error:", error)
+    console.error("Error creating contact:", error)
     return NextResponse.json(
       {
         success: false,

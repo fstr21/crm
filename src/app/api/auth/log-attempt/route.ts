@@ -1,14 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+let supabaseAdmin: any = null
+
+if (supabaseUrl && supabaseServiceKey) {
+  supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+}
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { email, attemptType, success, ip } = body
 
+    // If Supabase is disabled, just return success without logging
+    if (!supabaseAdmin) {
+      console.log('Auth attempt (Supabase disabled):', { email, attemptType, success, ip })
+      return NextResponse.json({ success: true })
+    }
+
     const userAgent = request.headers.get('user-agent') || 'Unknown'
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('auth_attempts')
       .insert([
         {

@@ -3,7 +3,6 @@
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '@/contexts/AuthContext'
-import { checkRateLimit } from '@/lib/redis'
 
 interface LoginFormData {
   email: string
@@ -31,10 +30,14 @@ export default function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProp
     setError('')
 
     try {
-      const clientIP = await fetch('/api/client-ip').then(r => r.json()).then(d => d.ip)
-      const rateLimitKey = `login_attempts:${clientIP}`
+      // Check rate limit via API
+      const rateLimitResponse = await fetch('/api/auth/check-rate-limit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login' })
+      })
       
-      const rateLimit = await checkRateLimit(rateLimitKey, 5, 900)
+      const rateLimit = await rateLimitResponse.json()
       
       if (!rateLimit.allowed) {
         setError(`Too many login attempts. Try again in ${Math.ceil((rateLimit.resetTime - Date.now()) / 60000)} minutes.`)
@@ -54,7 +57,7 @@ export default function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProp
             email: data.email,
             attemptType: 'login',
             success: false,
-            ip: clientIP
+            ip: 'unknown'
           })
         })
       } else {
@@ -65,7 +68,7 @@ export default function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProp
             email: data.email,
             attemptType: 'login',
             success: true,
-            ip: clientIP
+            ip: 'unknown'
           })
         })
         

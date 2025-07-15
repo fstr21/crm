@@ -1,6 +1,6 @@
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl", "windows"]
+  binaryTargets = ["native", "linux-musl", "windows", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -127,6 +127,7 @@ enum Priority {
 enum ActivityType {
   CONTACT_CREATED
   CONTACT_UPDATED
+  CONTACT_DELETED
   TASK_CREATED
   TASK_UPDATED
   TASK_COMPLETED

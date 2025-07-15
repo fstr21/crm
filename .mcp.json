@@ -1,0 +1,24 @@
+{
+  "tools": {
+    "zen": {
+      "type": "http",
+      "url": "http://localhost:3010/zen"
+    },
+    "filesystem": {
+      "type": "http",
+      "url": "http://localhost:3010/filesystem"
+    },
+    "postgres": {
+      "type": "http",
+      "url": "http://localhost:3010/postgres"
+    },
+    "github": {
+      "type": "http",
+      "url": "http://localhost:3010/github"
+    },
+    "memory": {
+      "type": "http",
+      "url": "http://localhost:3010/memory"
+    }
+  }
+}
